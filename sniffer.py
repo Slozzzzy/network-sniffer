@@ -1,17 +1,19 @@
 from scapy.all import sniff, ARP, wrpcap
 from analyze import analyze_packet  # Import function from analyze.py
 import time, os
+from GetIface import get_network_interfaces
 
-save_dir = "/home/slozzzy/Documents/Projects/network-sniffer/captured_packets" #your save file location
-os.makedirs(save_dir,exist_ok=True)
+save_dir = os.path.join(os.getcwd(), "captured_packets")
+os.makedirs(save_dir, exist_ok=True)
 
 packets =[]
+iface = get_network_interfaces()[0] # Get first network interface by default
 
 def packet_callback(packet):
     analyze_packet(packet)
     packets.append(packet)  # Add packet to list
     print(packet.summary())  # Print summary
-sniff(iface="wlp3s0", prn=packet_callback, store=True)
+sniff(iface=iface, prn=packet_callback, store=True)
 
 pcap_path = os.path.join(save_dir, "captured.pcap")
 sniff(prn=lambda x: wrpcap(pcap_path, x, append=True))
@@ -29,7 +31,7 @@ def detect_arp_spoof(packet):
         else:
             arp_table[ip] = mac
 
-sniff(iface="wlp3s0", filter="arp", prn=detect_arp_spoof, store=False)
+sniff(iface=iface, filter="arp", prn=detect_arp_spoof, store=False)
 
 pps_threshold = 100
 packet_count = 0
@@ -38,7 +40,7 @@ def count_packets(packet):
     global packet_count
     packet_count += 1
 
-sniff(iface="wlp3s0", prn=count_packets, store=False, timeout=1)
+sniff(iface=iface, prn=count_packets, store=False, timeout=1)
 
 while True:
     if packet_count > pps_threshold:
