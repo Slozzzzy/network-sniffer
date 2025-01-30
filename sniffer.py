@@ -1,6 +1,9 @@
 from scapy.all import sniff, ARP, wrpcap
 from analyze import analyze_packet  # Import function from analyze.py
-import time
+import time, os
+
+save_dir = "/home/slozzzy/Documents/Projects/network-sniffer/captured_packets" #your save file location
+os.makedirs(save_dir,exist_ok=True)
 
 packets =[]
 
@@ -10,8 +13,9 @@ def packet_callback(packet):
     print(packet.summary())  # Print summary
 sniff(iface="wlp3s0", prn=packet_callback, store=True)
 
-wrpcap("captured_packets.pcap", packets)
-print("Packets saved to captured_packets.pcap")
+pcap_path = os.path.join(save_dir, "captured.pcap")
+sniff(prn=lambda x: wrpcap(pcap_path, x, append=True))
+print("Packets saved to " + save_dir)
 
 arp_table = {}
 
