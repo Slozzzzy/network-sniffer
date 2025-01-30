@@ -7,7 +7,12 @@ save_dir = os.path.join(os.getcwd(), "captured_packets")
 os.makedirs(save_dir, exist_ok=True)
 
 packets =[]
-iface = get_network_interfaces()[0] # Get first network interface by default
+show_iface = ', '.join(get_network_interfaces()) #display all the available network interfaces
+print('Select your network interface (as 0, 1, 2, so on) : ' + show_iface)
+selected_face = input()
+if (int(selected_face) < 0 or int(selected_face) > len(get_network_interfaces())) : #simple error handling
+    exit()
+iface = get_network_interfaces()[int(selected_face)] 
 
 def packet_callback(packet):
     analyze_packet(packet)
@@ -20,7 +25,6 @@ sniff(prn=lambda x: wrpcap(pcap_path, x, append=True))
 print("Packets saved to " + save_dir)
 
 arp_table = {}
-
 def detect_arp_spoof(packet):
     if packet.haslayer(ARP) and packet.op == 2:  # ARP Reply
         mac = packet.hwsrc
@@ -31,7 +35,6 @@ def detect_arp_spoof(packet):
         else:
             arp_table[ip] = mac
 
-sniff(iface=iface, filter="arp", prn=detect_arp_spoof, store=False)
 
 pps_threshold = 100
 packet_count = 0
@@ -39,8 +42,6 @@ packet_count = 0
 def count_packets(packet):
     global packet_count
     packet_count += 1
-
-sniff(iface=iface, prn=count_packets, store=False, timeout=1)
 
 while True:
     if packet_count > pps_threshold:
